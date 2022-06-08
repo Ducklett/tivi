@@ -28,6 +28,7 @@ float imageOffX=0;
 float imageOffY=0;
 float imageAspect;
 float windowAspect;
+bool realtime=false;
 Playlist playlist = {0};
 
 char pathBuffer[MAX_FILES_IN_PLAYLIST][MAX_PATH_LENGTH];
@@ -37,7 +38,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 /* ======================== API ==================================*/
 
+float lerp(float a, float b, float t) {
+	return (1-t)*a + b*t;
+}
+
 void renderFrame() {
+	const float animSpeed=.25;
+	static float scaleA=0;
+	static float offXA=0;
+	static float offYA=0;
+	scaleA = lerp(scaleA, imageScale,animSpeed);
+	offXA = lerp(offXA, imageOffX,animSpeed);
+	offYA = lerp(offYA, imageOffY,animSpeed);
+
+	glUniform1f(scaleHandle, scaleA);
+	glUniform2f(offsetHandle, offXA/windowWidth*2,offYA/windowHeight*2);
+
 	glClearColor(0,0,0,0.);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -65,12 +81,11 @@ void Blit() {
 		glViewport(0,0,windowWidth,windowHeight);
 	// }
 
-	glUniform1f(scaleHandle, imageScale);
-	glUniform2f(offsetHandle, (float)imageOffX/windowWidth*2,imageOffY/windowHeight*2);
-
-	// double buffered
-	renderFrame();
-	renderFrame();
+	if (!realtime) {
+		// double buffered
+		renderFrame();
+		renderFrame();
+	}
 }
 
 void Fail(const char* msg) {
@@ -274,6 +289,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 	SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
 #endif
 
+	realtime=true;
+
 	MSG msg = {0};
 	while (GetMessage(&msg, hwnd, 0, 0) > 0) {
 		TranslateMessage(&msg);
@@ -465,7 +482,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEWHEEL: {
 		int delta = (int)wParam>>16;
 		imageScale += (float)delta * .001 * imageScale;
-		printf("scale %f\n", imageScale);
 
 		Blit();
 		return DefWindowProc(hwnd, message, wParam, lParam);
@@ -499,7 +515,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	case WM_PAINT: {
 		Blit();
-		return DefWindowProc(hwnd, message, wParam, lParam);
+		// TODO: figure out how to do proper game loop
+		if (realtime) {
+			renderFrame();
+		} else {
+			return DefWindowProc(hwnd, message, wParam, lParam);
+		}
 	} break;
 	default: {
 		return DefWindowProc(hwnd, message, wParam, lParam);
