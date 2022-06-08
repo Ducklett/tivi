@@ -15,6 +15,7 @@
 #include "imageDecoder.c"
 #include "playlist.c"
 
+// general app state
 WINDOWPLACEMENT placement = {sizeof(placement)};
 HWND hwnd;
 HDC hdc;
@@ -23,13 +24,20 @@ int windowWidth,windowHeight;
 int aspectHandle;
 int scaleHandle;
 int offsetHandle;
+
+// image viewing state
+Playlist playlist = {0};
 float imageScale=1;
 float imageOffX=0;
 float imageOffY=0;
 float imageAspect;
 float windowAspect;
+
+// animation
 bool realtime=false;
-Playlist playlist = {0};
+float scaleA=0;
+float offXA=0;
+float offYA=0;
 
 char pathBuffer[MAX_FILES_IN_PLAYLIST][MAX_PATH_LENGTH];
 char* pathPointers[MAX_FILES_IN_PLAYLIST];
@@ -44,9 +52,6 @@ float lerp(float a, float b, float t) {
 
 void renderFrame() {
 	const float animSpeed=.25;
-	static float scaleA=0;
-	static float offXA=0;
-	static float offYA=0;
 	scaleA = lerp(scaleA, imageScale,animSpeed);
 	offXA = lerp(offXA, imageOffX,animSpeed);
 	offYA = lerp(offYA, imageOffY,animSpeed);
@@ -217,12 +222,22 @@ void ToggleOnTop() {
 	}
 }
 
+void AnimateImageTransition(float direction) {
+	imageScale=1;
+	imageOffX=0;
+	imageOffY=0;
+	offXA = 300*direction;
+	scaleA=.8;
+}
+
 void NextImage() {
+	AnimateImageTransition(1);
 	char* imagePath = PlaylistNext(&playlist);
 	ShowImage(imagePath);
 }
 
 void PrevImage() {
+	AnimateImageTransition(-1);
 	char* imagePath = PlaylistPrevious(&playlist);
 	ShowImage(imagePath);
 }
