@@ -472,15 +472,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		return 0;
 	} break;
 #endif
-	// case WM_NCHITTEST: {
-	// 	LRESULT hit = DefWindowProc(hwnd, message, wParam, lParam);
-	// 	if (hit == HTCLIENT) {
-	// 		const int resize = HTBOTTOMRIGHT;
-	// 		const int drag = HTCAPTION;
-	// 		hit = shiftHeld ? resize : drag;
-	// 	}
-	// 	return hit;
-	// } break;
+	case WM_NCHITTEST: {
+		LRESULT hit = DefWindowProc(hwnd, message, wParam, lParam);
+		if (hit == HTCLIENT) {
+			const int resize = HTBOTTOMRIGHT;
+			const int drag = HTCAPTION;
+			hit = shiftHeld ? resize : drag;
+		}
+		return hit;
+	} break;
+	// passthrough for middle mouse button since we use it for panning
+	case WM_NCMBUTTONDOWN: {
+		SetCapture(hwnd);
+		return 0;
+	} break;
 	case WM_MOUSEMOVE: {
 		static int prevX = 0;
 		static int prevY = 0;
