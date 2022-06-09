@@ -278,6 +278,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 	WNDCLASSEXW window = {0};
 	window.cbSize = sizeof(WNDCLASSEXA);
 	window.style = CS_HREDRAW |CS_VREDRAW|CS_OWNDC;
+	window.hCursor = LoadCursor(NULL, IDC_ARROW);
 	window.lpfnWndProc = WindowProc;
 	window.hInstance = hInstance;
 	window.lpszClassName = className;
