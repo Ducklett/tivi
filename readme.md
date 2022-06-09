@@ -1,4 +1,4 @@
-# Imageviewer
+# Tivi
 
 A simple image viewer I made throughout a week of win32/openGL API practice sessions.
 

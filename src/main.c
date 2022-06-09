@@ -274,7 +274,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		}
 	}
 
-	wchar_t className[] = L"imageviewer";
+	wchar_t className[] = L"tivi";
 	WNDCLASSEXW window = {0};
 	window.cbSize = sizeof(WNDCLASSEXA);
 	window.style = CS_HREDRAW |CS_VREDRAW|CS_OWNDC;
@@ -295,7 +295,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		0,
 #endif
 		className,
-		L"ImageViewer",
+		L"Tivi - Drop image files to view",
 		WS_OVERLAPPEDWINDOW,
 		// x,y
 		CW_USEDEFAULT,
