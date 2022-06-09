@@ -12,5 +12,4 @@ void main()
 		float offX = -(aspect.x/aspect.y*.5-.5);
 		FragColor = texture(img,vec2(offX + uv.x*aspect.x/aspect.y,uv.y));
 	}
-	
 }

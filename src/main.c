@@ -15,6 +15,9 @@
 #include "imageDecoder.c"
 #include "playlist.c"
 
+#ifndef clamp
+#define clamp(v,a,b) min(b,max(v,a))
+#endif
 // general app state
 WINDOWPLACEMENT placement = {sizeof(placement)};
 HWND hwnd;
@@ -479,9 +482,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			if (prevX||prevY) {
 				int deltaX = mouseX-prevX;
 				int deltaY = mouseY-prevY;
-				imageOffX += (float)deltaX;
-				imageOffY -= (float)deltaY;
-				// printf("pan %d, %d\n", deltaX, deltaY);
+				imageOffX += (float)deltaX/imageScale;
+				imageOffY -= (float)deltaY/imageScale;
+				imageOffX = clamp(imageOffX,-windowWidth*.9, windowWidth*.9);
+				imageOffY = clamp(imageOffY,-windowHeight*.9, windowHeight*.9);
 				Blit();
 			}
 			prevX = mouseX;
