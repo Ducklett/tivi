@@ -487,8 +487,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		// middle mouse button down
 		if (wParam & MK_MBUTTON || shiftHeld) {
-			int mouseX = lParam&0xFFFF;
-			int mouseY = lParam>>16;
+			SetCapture(hwnd);
+			int mouseX = (int16_t)(lParam&0xFFFF);
+			int mouseY = (int16_t)(lParam>>16);
 			if (prevX||prevY) {
 				int deltaX = mouseX-prevX;
 				int deltaY = mouseY-prevY;
@@ -504,6 +505,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			prevY = mouseY;
 			// printf("pan %d,%d -- %d\n", lParam&0xFFFF, lParam>>16, wParam);
 		} else {
+			ReleaseCapture();
 			prevY=0;
 			prevX=0;
 		}
