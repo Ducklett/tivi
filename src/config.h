@@ -21,6 +21,7 @@
 // #define SUPPORT_HDR
 // #define SUPPORT_PIC
 #define SUPPORT_PNM
+#define SUPPORT_QOI
 
 // +---------------------------------
 // bounds

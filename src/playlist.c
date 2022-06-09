@@ -8,60 +8,6 @@ typedef struct Playlist {
 	int cursor;
 } Playlist;
 
-int LastIndexOf(const char* path, char c) {
-	int last = -1;
-	for(int i = 0; path[i] != '\0'; i++) {
-		if (path[i] == c) last = i;
-	}
-	return last;
-}
-
-bool ExtensionIsSupported(const char* path) {
-	int lastDotIndex = LastIndexOf(path, '.');
-
-	// it doesn't have an extension
-	if (lastDotIndex == -1) return false;
-
-	const char* pathExt = path+lastDotIndex;
-
-	const char* legalExtensions[] = {
-#ifdef SUPPORT_PNG
-		".png",
-#endif
-#ifdef SUPPORT_JPEG
-		".jpg", ".jpeg", ".jpe", ".jif", ".jfif",".jfi",
-#endif
-#ifdef SUPPORT_BMP
-		".bmp", ".dib",
-#endif
-#ifdef SUPPORT_PSD
-		".psd",
-#endif
-#ifdef SUPPORT_TGA
-		".tga", ".icb", ".vda", ".vst",
-#endif
-#ifdef SUPPORT_GIF
-		".gif",
-#endif
-#ifdef SUPPORT_HDR
-		".hdr",
-#endif
-#ifdef SUPPORT_PIC
-		".PIC",
-#endif
-#ifdef SUPPORT_PNM
-		".pbm", ".pgm", ".ppm", ".pnm",
-#endif
-	};
-
-	for(int i = 0; i<sizeof(legalExtensions)/sizeof(char*); i++) {
-		const char* legalExt = legalExtensions[i];
-
-		if (!strcmp(pathExt,legalExt)) return true;
-	}
-	return false;
-}
-
 /*
 Filters file list based on supported file extensions,
 returns a playlist of all the files to play

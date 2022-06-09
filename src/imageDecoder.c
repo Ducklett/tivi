@@ -1,4 +1,6 @@
+#include <stdbool.h>
 #include <config.h>
+
 #ifdef SUPPORT_JPEG
 #define STBI_ONLY_JPEG
 #endif
@@ -26,14 +28,94 @@
 #ifdef SUPPORT_PNM
 #define STBI_ONLY_PNM
 #endif
+#ifdef SUPPORT_QOI
+#define QOI_IMPLEMENTATION
+#include <qoi.h>
+#endif
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+int LastIndexOf(const char* path, char c) {
+	int last = -1;
+	for(int i = 0; path[i] != '\0'; i++) {
+		if (path[i] == c) last = i;
+	}
+	return last;
+}
+
+bool ExtensionIsSupported(const char* path) {
+	int lastDotIndex = LastIndexOf(path, '.');
+
+	// it doesn't have an extension
+	if (lastDotIndex == -1) return false;
+
+	const char* pathExt = path+lastDotIndex;
+
+	const char* legalExtensions[] = {
+#ifdef SUPPORT_PNG
+		".png",
+#endif
+#ifdef SUPPORT_JPEG
+		".jpg", ".jpeg", ".jpe", ".jif", ".jfif",".jfi",
+#endif
+#ifdef SUPPORT_BMP
+		".bmp", ".dib",
+#endif
+#ifdef SUPPORT_PSD
+		".psd",
+#endif
+#ifdef SUPPORT_TGA
+		".tga", ".icb", ".vda", ".vst",
+#endif
+#ifdef SUPPORT_GIF
+		".gif",
+#endif
+#ifdef SUPPORT_HDR
+		".hdr",
+#endif
+#ifdef SUPPORT_PIC
+		".PIC",
+#endif
+#ifdef SUPPORT_PNM
+		".pbm", ".pgm", ".ppm", ".pnm",
+#endif
+#ifdef SUPPORT_QOI
+		".qoi",
+#endif
+	};
+
+	for(int i = 0; i<sizeof(legalExtensions)/sizeof(char*); i++) {
+		const char* legalExt = legalExtensions[i];
+
+		if (!strcmp(pathExt,legalExt)) return true;
+	}
+	return false;
+}
+
 char* decodeImage(const char* path, int* width, int* height, int* channels, int desiredChannels) {
-	stbi_set_flip_vertically_on_load(1);
-	char *imgData = stbi_load(path, width, height, channels, desiredChannels);
-	return imgData;
+#ifdef SUPPORT_QOI
+	int dotIndex = LastIndexOf(path, '.');
+	if (dotIndex > -1 && !strcmp(path+dotIndex, ".qoi")) {
+		printf("is qoi!\n");
+
+		qoi_desc desc;
+		char *imgData = qoi_read(path, &desc, desiredChannels);
+
+		*width=desc.width;
+		*height=desc.height;
+		*channels=desc.channels;
+
+		*width=desc.width;
+
+		return imgData;
+	} else {
+#endif
+		char *imgData = stbi_load(path, width, height, channels, desiredChannels);
+		return imgData;
+#ifdef SUPPORT_QOI
+	}
+#endif
 }
 
 void freeDecodedImage(char* imgData) {
