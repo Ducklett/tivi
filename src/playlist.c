@@ -107,10 +107,8 @@ Playlist PlaylistFromFilesInSameDirectoryAs(const char* path, char** buffer, int
 		directoryPath[lastSlash] = '\0';
 		strcpy(filePath,path+lastSlash+1);
 	}
-	printf("playlist for file: %s\n", filePath);
 
 	ReplacePath(directoryPath, '/', '\\');
-	printf("Directory: %s\n", directoryPath);
 
     WIN32_FIND_DATAA fdFile;
     HANDLE hFind = NULL;
@@ -131,39 +129,24 @@ Playlist PlaylistFromFilesInSameDirectoryAs(const char* path, char** buffer, int
     do
     {
 		if (i>=bufferLen) break;
+        if(strcmp(fdFile.cFileName, ".") == 0) continue;
+        if(strcmp(fdFile.cFileName, "..") == 0) continue;
 
-        //Find first file will always return "."
-        //    and ".." as the first two directories.
-        if(strcmp(fdFile.cFileName, ".") != 0
-                && strcmp(fdFile.cFileName, "..") != 0)
-        {
-            //Build up our file path using the passed in
-            //  [sDir] and the file/foldername we just found:
-            sprintf(sPath, "%s\\%s", directoryPath, fdFile.cFileName);
+        sprintf(sPath, "%s\\%s", directoryPath, fdFile.cFileName);
 
-            //Is the entity a File or Folder?
-            if(fdFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY)
-            {
-                // printf("Directory: %s\n", sPath);
-                // ListDirectoryContents(sPath); //Recursion, I love it!
-            }
-            else {
-				if (ExtensionIsSupported(sPath)) {
-					puts(filePath);
-					puts(fdFile.cFileName);
-					if (strcmp(filePath, fdFile.cFileName) == 0) {
-						startIndex=i;
-						printf("matched! %s\n", filePath);
-					}
-					strncpy(buffer[i],sPath, MAX_PATH_LENGTH);
-					i++;
-				}
-            }
-        }
+        if(fdFile.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) continue;
+
+		if (ExtensionIsSupported(sPath)) {
+			if (strcmp(filePath, fdFile.cFileName) == 0) {
+				startIndex=i;
+			}
+			strncpy(buffer[i],sPath, MAX_PATH_LENGTH);
+			i++;
+		}
     }
-    while(FindNextFileA(hFind, &fdFile)); //Find the next file.
+    while(FindNextFileA(hFind, &fdFile));
 
-    FindClose(hFind); //Always, Always, clean things up!
+    FindClose(hFind);
 
 	return (Playlist) {
 		.files=buffer,

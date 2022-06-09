@@ -37,6 +37,7 @@ const KeyBind keyBindings[] = {
 	{ .key = 'q',        .action = ExitApp },
 	{ .key = VK_ESCAPE,  .action = ExitApp },
 	{ .key = 'r',        .action = Blit },
+	{ .key = 'a',        .action = ToggleAliasing },
 	{ .key = '0',        .action = ResetZoom },
 	{ .key = 'j',        .action = NextImage },
 	{ .key = 'k',        .action = PrevImage },
@@ -44,3 +45,9 @@ const KeyBind keyBindings[] = {
 	{ .key = VK_LEFT,    .action = PrevImage },
 };
 const int keyBindingsCount = sizeof(keyBindings) / sizeof(KeyBind);
+
+// +--------------------------------
+// animation
+// +--------------------------
+const float scaleSpeed=.15;          // 1 = instant
+const float panSpeed=.25;            // 1 = instant

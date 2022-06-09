@@ -30,6 +30,7 @@ int offsetHandle;
 
 // image viewing state
 Playlist playlist = {0};
+bool aliasing=false;
 float imageScale=1;
 float imageOffX=0;
 float imageOffY=0;
@@ -54,10 +55,9 @@ float lerp(float a, float b, float t) {
 }
 
 void renderFrame() {
-	const float animSpeed=.25;
-	scaleA = lerp(scaleA, imageScale,animSpeed);
-	offXA = lerp(offXA, imageOffX,animSpeed);
-	offYA = lerp(offYA, imageOffY,animSpeed);
+	scaleA = lerp(scaleA, imageScale,scaleSpeed);
+	offXA = lerp(offXA, imageOffX,panSpeed);
+	offYA = lerp(offYA, imageOffY,panSpeed);
 
 	glUniform1f(scaleHandle, scaleA);
 	glUniform2f(offsetHandle, offXA/windowWidth*2,offYA/windowHeight*2);
@@ -107,6 +107,8 @@ void ExitApp()
 	// PostQuitMessage(0);
 }
 
+unsigned int texture =-1;
+
 void ShowImage(const char *path)
 {
 	const int wantedChannels = 4;
@@ -155,7 +157,6 @@ void ShowImage(const char *path)
 	SetWindowPos(hwnd, NULL, 0, 0, windowWidth, windowHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 	SetWindowTextA(hwnd, path);
 
-	static unsigned int texture =-1;
 
 	if (texture != -1) {
 		glDeleteTextures(1,&texture);
@@ -167,13 +168,21 @@ void ShowImage(const char *path)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag > 1 ? GL_NEAREST : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, aliasing ? GL_NEAREST : GL_LINEAR);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
 	freeDecodedImage(img);
 
 	imageAspect = (float)width / height;
 
+	Blit();
+}
+
+void ToggleAliasing() {
+	aliasing=!aliasing;
+	printf("aliasing %d\n", aliasing);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, aliasing ? GL_NEAREST : GL_LINEAR);
 	Blit();
 }
 
@@ -476,7 +485,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		static int prevY = 0;
 
 		// middle mouse button down
-		if (wParam & MK_MBUTTON) {
+		if (wParam & MK_MBUTTON || shiftHeld) {
 			int mouseX = lParam&0xFFFF;
 			int mouseY = lParam>>16;
 			if (prevX||prevY) {
@@ -484,8 +493,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 				int deltaY = mouseY-prevY;
 				imageOffX += (float)deltaX/imageScale;
 				imageOffY -= (float)deltaY/imageScale;
-				imageOffX = clamp(imageOffX,-windowWidth*.9, windowWidth*.9);
-				imageOffY = clamp(imageOffY,-windowHeight*.9, windowHeight*.9);
+
+				float clampMultiplier = max(imageScale,1)*.9; 
+				imageOffX = clamp(imageOffX,-windowWidth*clampMultiplier, windowWidth*clampMultiplier);
+				imageOffY = clamp(imageOffY,-windowHeight*clampMultiplier, windowHeight*clampMultiplier);
 				Blit();
 			}
 			prevX = mouseX;
