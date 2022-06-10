@@ -292,19 +292,21 @@ void ToggleFullscreen()
 		if (!gotPlacement) puts("Could not get placement\n");
 		if (!gotMonitor) puts("Could not get monitor\n");
 		if (gotPlacement&& gotMonitor) {
-			SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+			scaleA=.5;
 			windowWidth = mi.rcMonitor.right - mi.rcMonitor.left;
 			windowHeight = mi.rcMonitor.bottom - mi.rcMonitor.top;
+			SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
 			SetWindowPos(hwnd,
 						 HWND_TOP,
 						 mi.rcMonitor.left,
 						 mi.rcMonitor.top,
-						 windowWidth,
-						 windowHeight,
+						 windowWidth+1,   // if we don't do this we get a flicker when entering fullscreen...
+						 windowHeight+1,
 						 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 
 		}
 	} else {
+		scaleA=2;
 #ifndef FEATURE_BORDERLESS_WINDOW
 		SetWindowLongW(hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
 #endif
@@ -313,7 +315,7 @@ void ToggleFullscreen()
 					 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 	}
 
-	Blit();
+	// Blit();
 }
 
 void ToggleOnTop() {
