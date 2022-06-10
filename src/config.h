@@ -33,32 +33,32 @@
 // keyboard shortcuts
 // +--------------------------
 const KeyBind keyBindings[] = {
-	{ .key = 'o',        .action = ToggleOnTop },
-	{ .key = 'f',        .action = ToggleFullscreen },
-	{ .key = 'q',        .action = ExitApp },
-	{ .key = VK_ESCAPE,  .action = ExitApp },
-	{ .key = 'r',        .action = Blit },
-	{ .key = 'a',        .action = ToggleAliasing },
-	{ .key = 'j',        .action = NextImage },
-	{ .key = 'k',        .action = PrevImage },
-	{ .key = VK_RIGHT,   .action = NextImage },
-	{ .key = VK_LEFT,    .action = PrevImage },
+	{ .key = 'o',        .action = toggle_on_top },
+	{ .key = 'f',        .action = toggle_fullscreen },
+	{ .key = 'q',        .action = exit_app },
+	{ .key = VK_ESCAPE,  .action = exit_app },
+	{ .key = 'r',        .action = blit },
+	{ .key = 'a',        .action = toggle_aliasing },
+	{ .key = 'j',        .action = next_image },
+	{ .key = 'k',        .action = prev_image },
+	{ .key = VK_RIGHT,   .action = next_image },
+	{ .key = VK_LEFT,    .action = prev_image },
 
-	{ .key = '0',        .action = ResetZoom },
-	{ .key = '1',        .action = ImageUseRealSize },
-	{ .key = '2',        .action = ImageFit },
-	{ .key = '3',        .action = ImageFitHorizontal },
-	{ .key = 'h',        .action = ImageFitHorizontal },
-	{ .key = '4',        .action = ImageFitVertical },
-	{ .key = 'v',        .action = ImageFitVertical },
-	{ .key = '5',        .action = ImageFill },
+	{ .key = '0',        .action = reset_zoom },
+	{ .key = '1',        .action = image_use_real_size },
+	{ .key = '2',        .action = image_fit },
+	{ .key = '3',        .action = image_fit_horizontal },
+	{ .key = 'h',        .action = image_fit_horizontal },
+	{ .key = '4',        .action = image_fit_vertical },
+	{ .key = 'v',        .action = image_fit_vertical },
+	{ .key = '5',        .action = image_fill },
 };
 
-const int keyBindingsCount = sizeof(keyBindings) / sizeof(KeyBind);
+const int KEYBINDINGS_COUNT = sizeof(keyBindings) / sizeof(KeyBind);
 
 // +--------------------------------
 // animation
 // +--------------------------
-const float scaleSpeed=.15;          // 1 = instant
-const float panSpeed=.25;            // 1 = instant
-const float stretchSpeed=.6;         // 1 = instant
+const float SCALE_SPEED=.15;          // 1 = instant
+const float PAN_SPEED=.25;            // 1 = instant
+const float STRETCH_SPEED=.6;         // 1 = instant

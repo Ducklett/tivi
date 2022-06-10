@@ -2,22 +2,21 @@
 #define UNICODE
 #endif
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
 #include<glad.h>
 #include<gl/GL.h>
-#include <synchapi.h>
 #include <stdlib.h>
+#include <config.h>
+#include <image_decoder.h>
+#include <playlist.h>
 #include "../assets.h"
 
-#include "imageDecoder.c"
-#include "playlist.c"
-
-#ifndef clamp
-#define clamp(v,a,b) min(b,max(v,a))
+#ifndef CLAMP
+#define CLAMP(v,a,b) min(b,max(v,a))
 #endif
+
 // general app state
 WINDOWPLACEMENT placement = {sizeof(placement)};
 HWND hwnd;
@@ -30,11 +29,11 @@ int scaleHandle;
 int offsetHandle;
 
 typedef enum FitMode {
-	FMrealSize,
-	FMfit,
-	FMfill,
-	FMfitHorizontal,
-	FMfitVertical
+	FM_REAL_SIZE,
+	FM_FIT,
+	FM_FILL,
+	FM_FIT_HORIZONTAL,
+	FM_FIT_VERTICAL
 } FitMode;
 
 // image viewing state
@@ -45,7 +44,7 @@ float imageOffX=0;
 float imageOffY=0;
 float stretchX=1;
 float stretchY=1;
-FitMode fitMode = FMfit;
+FitMode fitMode = FM_FIT;
 
 // animation
 bool realtime=false;
@@ -62,52 +61,52 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 /* ======================== API ==================================*/
 
-void ImageFit() { 
-	fitMode = FMfit;
+void image_fit() { 
+	fitMode = FM_FIT;
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	Blit();
+	blit();
 }
-void ImageFill() { 
-	fitMode = FMfill;
+void image_fill() { 
+	fitMode = FM_FILL;
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	Blit();
+	blit();
 }
-void ImageFitHorizontal() { 
-	fitMode = FMfitHorizontal;
+void image_fit_horizontal() { 
+	fitMode = FM_FIT_HORIZONTAL;
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	Blit();
+	blit();
 }
-void ImageFitVertical() { 
-	fitMode = FMfitVertical;
+void image_fit_vertical() { 
+	fitMode = FM_FIT_VERTICAL;
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	Blit();
+	blit();
 }
-void ImageUseRealSize() { 
-	fitMode = FMrealSize;
+void image_use_real_size() { 
+	fitMode = FM_REAL_SIZE;
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	Blit();
+	blit();
 }
 
 float lerp(float a, float b, float t) {
 	return (1-t)*a + b*t;
 }
 
-void renderFrame() {
-	scaleA = lerp(scaleA, imageScale,scaleSpeed);
-	offXA = lerp(offXA, imageOffX,panSpeed);
-	offYA = lerp(offYA, imageOffY,panSpeed);
-	stretchXA = lerp(stretchXA,stretchX,stretchSpeed);
-	stretchYA = lerp(stretchYA,stretchY,stretchSpeed);
+void render_frame() {
+	scaleA = lerp(scaleA, imageScale,SCALE_SPEED);
+	offXA = lerp(offXA, imageOffX,PAN_SPEED);
+	offYA = lerp(offYA, imageOffY,PAN_SPEED);
+	stretchXA = lerp(stretchXA,stretchX,STRETCH_SPEED);
+	stretchYA = lerp(stretchYA,stretchY,STRETCH_SPEED);
 
 	glUniform1f(scaleHandle, scaleA);
 	glUniform2f(offsetHandle, offXA/windowWidth*2,offYA/windowHeight*2);
@@ -127,21 +126,21 @@ void renderFrame() {
 	SwapBuffers(hdc);
 }
 
-void ResetZoom() {
+void reset_zoom() {
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	Blit();
+	blit();
 }
 
-void Blit() {
+void blit() {
 	RECT rect;
 	GetClientRect(hwnd,&rect);
 	windowWidth = rect.right-rect.left;
 	windowHeight = rect.bottom-rect.top;
 
 	switch (fitMode) {
-	case FMfit: {
+	case FM_FIT: {
 		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
 		if (aspect<1) {
 			stretchX=aspect;
@@ -151,7 +150,7 @@ void Blit() {
 			stretchY=1/aspect;
 		}
 	} break;
-	case FMfill: {
+	case FM_FILL: {
 		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
 		if (aspect<1) {
 			stretchX=1;
@@ -161,16 +160,16 @@ void Blit() {
 			stretchY=1;
 		}
 	} break;
-	case FMrealSize: {
+	case FM_REAL_SIZE: {
 		stretchX=(float)imageWidth/windowWidth;
 		stretchY=(float)imageHeight/windowHeight;
 	} break;
-	case FMfitHorizontal: {
+	case FM_FIT_HORIZONTAL: {
 		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
 		stretchX=1;
 		stretchY=1/aspect;
 	} break;
-	case FMfitVertical: {
+	case FM_FIT_VERTICAL: {
 		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
 		stretchX=aspect;
 		stretchY=1;
@@ -185,29 +184,29 @@ void Blit() {
 
 	if (!realtime) {
 		// double buffered
-		renderFrame();
-		renderFrame();
+		render_frame();
+		render_frame();
 	}
 }
 
-void Fail(const char* msg) {
+void fail(const char* msg) {
 	MessageBoxA(hwnd, msg, "Error", MB_OK|MB_ICONERROR);
 	PostQuitMessage(1);
 }
-void ExitApp()
+void exit_app()
 {
 	// TODO: figure out how to properly stop the app
 	ExitProcess(0);
 	// PostQuitMessage(0);
 }
 
-unsigned int texture =-1;
 
-void ShowImage(const char *path)
+void show_image(const char *path)
 {
+	static unsigned int texture =-1;
 	const int wantedChannels = 4;
 	int width, height, nChannels;
-	char *img = decodeImage(path, &width, &height, &nChannels, wantedChannels);
+	char *img = decode_image(path, &width, &height, &nChannels, wantedChannels);
 	// assert(nChannels == wantedChannels);
 	imageWidth=width;
 	imageHeight=height;
@@ -251,7 +250,6 @@ void ShowImage(const char *path)
 	SetWindowPos(hwnd, NULL, 0, 0, windowWidth, windowHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 	SetWindowTextA(hwnd, path);
 
-
 	if (texture != -1) {
 		glDeleteTextures(1,&texture);
 	}
@@ -265,20 +263,18 @@ void ShowImage(const char *path)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, aliasing ? GL_NEAREST : GL_LINEAR);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
-	freeDecodedImage(img);
+	decoded_image_free(img);
 
-	Blit();
+	blit();
 }
 
-void ToggleAliasing() {
+void toggle_aliasing() {
 	aliasing=!aliasing;
-	printf("aliasing %d\n", aliasing);
-	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, aliasing ? GL_NEAREST : GL_LINEAR);
-	Blit();
+	blit();
 }
 
-void ToggleFullscreen()
+void toggle_fullscreen()
 {
 	long dwStyle = GetWindowLong(hwnd, GWL_STYLE);
 	static bool fullscreen = false;
@@ -315,10 +311,10 @@ void ToggleFullscreen()
 					 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 	}
 
-	// Blit();
+	blit();
 }
 
-void ToggleOnTop() {
+void toggle_on_top() {
 	static bool onTop = false;
 	onTop = !onTop;
 	if (onTop) {
@@ -328,7 +324,7 @@ void ToggleOnTop() {
 	}
 }
 
-void AnimateImageTransition(float direction) {
+void animate_image_transition(float direction) {
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
@@ -336,16 +332,16 @@ void AnimateImageTransition(float direction) {
 	scaleA=.8;
 }
 
-void NextImage() {
-	AnimateImageTransition(1);
-	char* imagePath = PlaylistNext(&playlist);
-	ShowImage(imagePath);
+void next_image() {
+	animate_image_transition(1);
+	char* imagePath = playlist_next(&playlist);
+	show_image(imagePath);
 }
 
-void PrevImage() {
-	AnimateImageTransition(-1);
-	char* imagePath = PlaylistPrevious(&playlist);
-	ShowImage(imagePath);
+void prev_image() {
+	animate_image_transition(-1);
+	char* imagePath = playlist_previous(&playlist);
+	show_image(imagePath);
 }
 
 /* ====================== END API ================================*/
@@ -362,9 +358,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
 	if (argc>1) {
 		if (argc==2) {
-			playlist = PlaylistFromFilesInSameDirectoryAs(argv[1],pathPointers, MAX_FILES_IN_PLAYLIST);
+			playlist = playlist_from_files_in_same_directory_as(argv[1],pathPointers, MAX_FILES_IN_PLAYLIST);
 		} else {
-			playlist = PlaylistFromFileList(argv+1,argc-1);
+			playlist = playlist_from_file_list(argv+1,argc-1);
 		}
 	}
 
@@ -380,7 +376,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 	window.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
 	window.hIconSm = LoadIcon(hInstance, IDI_APPLICATION);
 
-	if (!RegisterClassExW(&window)) Fail("RegisterClass failed");
+	if (!RegisterClassExW(&window)) fail("RegisterClass failed");
 
 	hwnd = CreateWindowExW( //
 #ifdef FEATURE_DRAG_AND_DROP
@@ -402,7 +398,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		hInstance,
 		NULL);
 
-	if (hwnd == NULL) Fail("hwnd was null");
+	if (hwnd == NULL) fail("hwnd was null");
 
 	ShowWindow(hwnd, nCmdShow);
 
@@ -425,7 +421,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool shiftHeld = false;
-	static bool leftClicking = false;
 
 	switch (message) {
 	case WM_CREATE: {
@@ -449,7 +444,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		};
 		hdc = GetDC(hwnd);
 		int pixelFormat = ChoosePixelFormat(hdc,&pfd);
-		if (!pixelFormat) Fail("Cound not find buffer matching pixel format");
+		if (!pixelFormat) fail("Cound not find buffer matching pixel format");
 		SetPixelFormat(hdc,pixelFormat,&pfd);
 
 		ctx = wglCreateContext(hdc);
@@ -521,12 +516,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		wglMakeCurrent(hdc,NULL);
 		wglDeleteContext(ctx);
 		ReleaseDC(hwnd, hdc);
-		ExitApp();
+		exit_app();
 	} break;
 	case WM_ACTIVATE: {
 		// HACK: load first image here because doing it in create doesn't work...
 		if (!windowWidth && playlist.fileCount) {
-			ShowImage(playlist.files[playlist.cursor]);
+			show_image(playlist.files[playlist.cursor]);
 		}
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	} break;
@@ -538,10 +533,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		if (!fileCount) return 0;
 
-
 		// HACK: don't free static path buffer
 		if (playlist.files != pathPointers) {
-			FreePlaylist(&playlist);
+			playlist_free(&playlist);
 		}
 
 		char** buf = pathPointers;
@@ -549,20 +543,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (fileCount>MAX_FILES_IN_PLAYLIST) fileCount = MAX_FILES_IN_PLAYLIST;
 		if (fileCount == 1) {
 			DragQueryFileA(drop, 0, pathPointers[0], MAX_PATH_LENGTH);
-			playlist = PlaylistFromFilesInSameDirectoryAs(pathPointers[0],pathPointers, MAX_FILES_IN_PLAYLIST);
+			playlist = playlist_from_files_in_same_directory_as(pathPointers[0],pathPointers, MAX_FILES_IN_PLAYLIST);
 		} else {
 			for(int i = 0;i<fileCount;i++) {
-				// DragQueryFileA(drop, i, pathPointers[fileCount-i], MAX_PATH_LENGTH);
 				DragQueryFileA(drop, i, pathPointers[i], MAX_PATH_LENGTH);
 			}
 
-			playlist = PlaylistFromFileList(buf,fileCount);
+			playlist = playlist_from_file_list(buf,fileCount);
 		}
 
 		DragFinish(drop);
 
-		ShowImage(playlist.files[playlist.cursor]);
-		// ShowImage(path);
+		show_image(playlist.files[playlist.cursor]);
 		return 0;
 	} break;
 #endif
@@ -596,9 +588,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 				imageOffY -= (float)deltaY/imageScale;
 
 				float clampMultiplier = max(imageScale,1)*.9; 
-				imageOffX = clamp(imageOffX,-imageWidth*clampMultiplier, imageWidth*clampMultiplier);
-				imageOffY = clamp(imageOffY,-imageHeight*clampMultiplier, imageHeight*clampMultiplier);
-				Blit();
+				imageOffX = CLAMP(imageOffX,-imageWidth*clampMultiplier, imageWidth*clampMultiplier);
+				imageOffY = CLAMP(imageOffY,-imageHeight*clampMultiplier, imageHeight*clampMultiplier);
+				blit();
 			}
 			prevX = mouseX;
 			prevY = mouseY;
@@ -614,7 +606,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEWHEEL: {
 		int delta = (int)wParam>>16;
 
-		if (aliasing && fitMode==FMrealSize) {
+		if (aliasing && fitMode==FM_REAL_SIZE) {
 			// let's scale in fixed increments to preserve the pixel perfect aesthetics
 			if (delta>0) {
 				if (imageScale<1) {
@@ -633,22 +625,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			imageScale += (float)delta * .001 * imageScale;
 		}
 
-		Blit();
+		blit();
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	} break;
-	// case WM_LBUTTONDOWN: {
-	// 	printf("click down!\n");
-	// 	leftClicking=true;
-	// } break;
-	// case WM_LBUTTONUP: {
-	// 	printf("click up!\n");
-	// 	leftClicking=false;
-	// } break;
 	case WM_CHAR:    /* FALLTHROUGH */
 	case WM_KEYDOWN: {
 		if (wParam == VK_SHIFT) shiftHeld = true;
 
-		for(int i = 0; i < keyBindingsCount;i++) {
+		for(int i = 0; i < KEYBINDINGS_COUNT;i++) {
 			KeyBind k = keyBindings[i];
 			if (k.key == wParam) {
 				k.action();
@@ -664,10 +648,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	} break;
 
 	case WM_PAINT: {
-		Blit();
+		blit();
 		// TODO: figure out how to do proper game loop
 		if (realtime) {
-			renderFrame();
+			render_frame();
 		} else {
 			return DefWindowProc(hwnd, message, wParam, lParam);
 		}

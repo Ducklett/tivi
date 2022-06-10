@@ -1,24 +1,16 @@
 #include <stdbool.h>
 #include <config.h>
 #include <string.h>
+#include <playlist.h>
+#include <image_decoder.h>
 
-typedef struct Playlist {
-	char** files;
-	int fileCount;
-	int cursor;
-} Playlist;
-
-/*
-Filters file list based on supported file extensions,
-returns a playlist of all the files to play
-*/
-Playlist PlaylistFromFileList(char** files, int count) {
+Playlist playlist_from_file_list(char** files, int count) {
 	// let's just be lazy and allocate the max possible size
 	char** filteredList = malloc(sizeof(char*)*count);
 	int filteredCount = 0;
 	for(int i = 0; i < count; i++) {
 		char* filePath = files[i];
-		if (ExtensionIsSupported(filePath)) {
+		if (extension_is_supported(filePath)) {
 			puts(filePath);
 			filteredList[filteredCount++] = filePath;
 		}
@@ -31,20 +23,20 @@ Playlist PlaylistFromFileList(char** files, int count) {
 	return p;
 }
 
-void ReplacePath(char* path, char find, char replace) {
+void replace_path(char* path, char find, char replace) {
 	for (int i = 0; path[i] != '\0'; i++) {
 		if (path[i] == find) path[i] = replace;
 	}
 }
 
-Playlist PlaylistFromFilesInSameDirectoryAs(const char* path, char** buffer, int bufferLen) {
+Playlist playlist_from_files_in_same_directory_as(const char* path, char** buffer, int bufferLen) {
 
 	char directoryPath[MAX_PATH_LENGTH];
 	char filePath[MAX_PATH_LENGTH];
 	strcpy(directoryPath, path);
-	ReplacePath(directoryPath, '\\', '/');
+	replace_path(directoryPath, '\\', '/');
 
-	int lastSlash = LastIndexOf(directoryPath, '/');
+	int lastSlash = last_index_of(directoryPath, '/');
 
 	if (lastSlash == -1) {
 		strcpy(directoryPath, "/");
@@ -54,7 +46,7 @@ Playlist PlaylistFromFilesInSameDirectoryAs(const char* path, char** buffer, int
 		strcpy(filePath,path+lastSlash+1);
 	}
 
-	ReplacePath(directoryPath, '/', '\\');
+	replace_path(directoryPath, '/', '\\');
 
     WIN32_FIND_DATAA fdFile;
     HANDLE hFind = NULL;
@@ -82,7 +74,7 @@ Playlist PlaylistFromFilesInSameDirectoryAs(const char* path, char** buffer, int
 
         if(fdFile.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) continue;
 
-		if (ExtensionIsSupported(sPath)) {
+		if (extension_is_supported(sPath)) {
 			if (strcmp(filePath, fdFile.cFileName) == 0) {
 				startIndex=i;
 			}
@@ -101,20 +93,17 @@ Playlist PlaylistFromFilesInSameDirectoryAs(const char* path, char** buffer, int
 	};
 }
 
-char* PlaylistNext(Playlist* list) {
+char* playlist_next(Playlist* list) {
 	list->cursor = (list->cursor+1) % list->fileCount;
 	return list->files[list->cursor];
 }
 
-char* PlaylistPrevious(Playlist* list) {
+char* playlist_previous(Playlist* list) {
 	list->cursor = (list->cursor-1 + list->fileCount) % list->fileCount;
 	return list->files[list->cursor];
 }
 
-/*
-Frees resources allocated by `PlaylistFromFileList` and resets the playlist
-*/
-void FreePlaylist(Playlist* list) {
+void playlist_free(Playlist* list) {
 	free(list->files);
 	list->files=0;
 	list->fileCount=0;

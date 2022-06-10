@@ -1,5 +1,5 @@
-#include <stdbool.h>
 #include <config.h>
+#include <image_decoder.h>
 
 #ifdef SUPPORT_JPEG
 #define STBI_ONLY_JPEG
@@ -36,7 +36,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-int LastIndexOf(const char* path, char c) {
+int last_index_of(const char* path, char c) {
 	int last = -1;
 	for(int i = 0; path[i] != '\0'; i++) {
 		if (path[i] == c) last = i;
@@ -44,8 +44,8 @@ int LastIndexOf(const char* path, char c) {
 	return last;
 }
 
-bool ExtensionIsSupported(const char* path) {
-	int lastDotIndex = LastIndexOf(path, '.');
+bool extension_is_supported(const char* path) {
+	int lastDotIndex = last_index_of(path, '.');
 
 	// it doesn't have an extension
 	if (lastDotIndex == -1) return false;
@@ -93,9 +93,9 @@ bool ExtensionIsSupported(const char* path) {
 	return false;
 }
 
-char* decodeImage(const char* path, int* width, int* height, int* channels, int desiredChannels) {
+char* decode_image(const char* path, int* width, int* height, int* channels, int desiredChannels) {
 #ifdef SUPPORT_QOI
-	int dotIndex = LastIndexOf(path, '.');
+	int dotIndex = last_index_of(path, '.');
 	if (dotIndex > -1 && !strcmp(path+dotIndex, ".qoi")) {
 		printf("is qoi!\n");
 
@@ -118,6 +118,6 @@ char* decodeImage(const char* path, int* width, int* height, int* channels, int 
 #endif
 }
 
-void freeDecodedImage(char* imgData) {
+void decoded_image_free(char* imgData) {
 	stbi_image_free(imgData);
 }
