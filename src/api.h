@@ -12,6 +12,11 @@ void NextImage();
 void PrevImage();
 void ResetZoom();
 
+void ImageFit();
+void ImageFitHorizontal();
+void ImageFitVertical();
+void ImageUseRealSize();
+
 typedef struct KeyBind {
 	char key;
 	void(*action)();

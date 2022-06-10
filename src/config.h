@@ -7,7 +7,7 @@
 // included features
 // +--------------------------
 #define FEATURE_DRAG_AND_DROP
-// #define FEATURE_BORDERLESS_WINDOW
+#define FEATURE_BORDERLESS_WINDOW
 
 // +---------------------------------
 // included image format decoders
@@ -39,12 +39,18 @@ const KeyBind keyBindings[] = {
 	{ .key = VK_ESCAPE,  .action = ExitApp },
 	{ .key = 'r',        .action = Blit },
 	{ .key = 'a',        .action = ToggleAliasing },
-	{ .key = '0',        .action = ResetZoom },
 	{ .key = 'j',        .action = NextImage },
 	{ .key = 'k',        .action = PrevImage },
 	{ .key = VK_RIGHT,   .action = NextImage },
 	{ .key = VK_LEFT,    .action = PrevImage },
+
+	{ .key = '0',        .action = ResetZoom },
+	{ .key = '1',        .action = ImageUseRealSize },
+	{ .key = '2',        .action = ImageFit },
+	{ .key = '3',        .action = ImageFitHorizontal },
+	{ .key = '4',        .action = ImageFitVertical },
 };
+
 const int keyBindingsCount = sizeof(keyBindings) / sizeof(KeyBind);
 
 // +--------------------------------
@@ -52,3 +58,4 @@ const int keyBindingsCount = sizeof(keyBindings) / sizeof(KeyBind);
 // +--------------------------
 const float scaleSpeed=.15;          // 1 = instant
 const float panSpeed=.25;            // 1 = instant
+const float stretchSpeed=.6;         // 1 = instant

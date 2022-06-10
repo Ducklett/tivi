@@ -24,9 +24,17 @@ HWND hwnd;
 HDC hdc;
 HGLRC ctx;
 int windowWidth,windowHeight;
-int aspectHandle;
+int imageWidth,imageHeight;
+int stretchHandle;
 int scaleHandle;
 int offsetHandle;
+
+typedef enum FitMode {
+	FMrealSize,
+	FMfit,
+	FMfitHorizontal,
+	FMfitVertical
+} FitMode;
 
 // image viewing state
 Playlist playlist = {0};
@@ -34,14 +42,17 @@ bool aliasing=false;
 float imageScale=1;
 float imageOffX=0;
 float imageOffY=0;
-float imageAspect;
-float windowAspect;
+float stretchX=1;
+float stretchY=1;
+FitMode fitMode = FMfit;
 
 // animation
 bool realtime=false;
 float scaleA=0;
 float offXA=0;
 float offYA=0;
+float stretchXA=1;
+float stretchYA=1;
 
 char pathBuffer[MAX_FILES_IN_PLAYLIST][MAX_PATH_LENGTH];
 char* pathPointers[MAX_FILES_IN_PLAYLIST];
@@ -49,6 +60,35 @@ char* pathPointers[MAX_FILES_IN_PLAYLIST];
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 /* ======================== API ==================================*/
+
+void ImageFit() { 
+	fitMode = FMfit;
+	imageScale=1;
+	imageOffX=0;
+	imageOffY=0;
+	Blit();
+}
+void ImageFitHorizontal() { 
+	fitMode = FMfitHorizontal;
+	imageScale=1;
+	imageOffX=0;
+	imageOffY=0;
+	Blit();
+}
+void ImageFitVertical() { 
+	fitMode = FMfitVertical;
+	imageScale=1;
+	imageOffX=0;
+	imageOffY=0;
+	Blit();
+}
+void ImageUseRealSize() { 
+	fitMode = FMrealSize;
+	imageScale=1;
+	imageOffX=0;
+	imageOffY=0;
+	// Blit();
+}
 
 float lerp(float a, float b, float t) {
 	return (1-t)*a + b*t;
@@ -58,9 +98,19 @@ void renderFrame() {
 	scaleA = lerp(scaleA, imageScale,scaleSpeed);
 	offXA = lerp(offXA, imageOffX,panSpeed);
 	offYA = lerp(offYA, imageOffY,panSpeed);
+	stretchXA = lerp(stretchXA,stretchX,stretchSpeed);
+	stretchYA = lerp(stretchYA,stretchY,stretchSpeed);
 
 	glUniform1f(scaleHandle, scaleA);
 	glUniform2f(offsetHandle, offXA/windowWidth*2,offYA/windowHeight*2);
+
+	
+	// TODO: figure out why this happens...
+	if (isnan(stretchYA)) {
+		stretchYA = stretchY;
+	}
+
+	glUniform2f(stretchHandle, stretchXA, stretchYA);
 
 	glClearColor(0,0,0,0.);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -78,16 +128,46 @@ void ResetZoom() {
 }
 
 void Blit() {
-	// if (windowSizeChanged) {
-		RECT rect;
-		GetClientRect(hwnd,&rect);
-		windowWidth = rect.right-rect.left;
-		windowHeight = rect.bottom-rect.top;
-		windowAspect = (float)windowWidth / windowHeight;
-		glUniform2f(aspectHandle, windowAspect, imageAspect);
+	RECT rect;
+	GetClientRect(hwnd,&rect);
+	windowWidth = rect.right-rect.left;
+	windowHeight = rect.bottom-rect.top;
 
-		glViewport(0,0,windowWidth,windowHeight);
-	// }
+	switch (fitMode) {
+	case FMfit: {
+		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
+		if (aspect<1) {
+			// height bound
+			stretchX=aspect;
+			stretchY=1;
+		} else {
+			// width bound
+			stretchX=1;
+			stretchY=1/aspect;
+		}
+	} break;
+	case FMrealSize: {
+		stretchX=(float)imageWidth/windowWidth;
+		stretchY=(float)imageHeight/windowHeight;
+	} break;
+	case FMfitHorizontal: {
+		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
+		stretchX=1;
+		stretchY=1/aspect;
+	} break;
+	case FMfitVertical: {
+		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
+		stretchX=aspect;
+		stretchY=1;
+	} break;
+	default: {
+		printf("unsupported fit mode %d\n", fitMode);
+		exit(1);
+	} break;
+	}
+
+	// glUniform2f(stretchHandle, stretchX, stretchY);
+	glViewport(0,0,windowWidth,windowHeight);
 
 	if (!realtime) {
 		// double buffered
@@ -115,6 +195,8 @@ void ShowImage(const char *path)
 	int width, height, nChannels;
 	char *img = decodeImage(path, &width, &height, &nChannels, wantedChannels);
 	// assert(nChannels == wantedChannels);
+	imageWidth=width;
+	imageHeight=height;
 
 	if (!img) {
 		printf("failed to load image: %s\n", path);
@@ -150,8 +232,6 @@ void ShowImage(const char *path)
 	windowWidth = max(windowWidth, width*mag);
 	windowHeight = max(windowHeight, height*mag);
 
-	imageAspect = (float)width / height;
-
 	// TODO: set client rect instead of window size (this leaves small black borders)
 	// TODO: don't do it in fullscreen
 	SetWindowPos(hwnd, NULL, 0, 0, windowWidth, windowHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
@@ -172,8 +252,6 @@ void ShowImage(const char *path)
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
 	freeDecodedImage(img);
-
-	imageAspect = (float)width / height;
 
 	Blit();
 }
@@ -411,7 +489,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		glBindVertexArray(VAO);
 
-		aspectHandle = glGetUniformLocation(program, "aspect");
+		stretchHandle = glGetUniformLocation(program, "stretch");
 		scaleHandle = glGetUniformLocation(program, "scale");
 		offsetHandle = glGetUniformLocation(program, "offset");
 
@@ -502,8 +580,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 				imageOffY -= (float)deltaY/imageScale;
 
 				float clampMultiplier = max(imageScale,1)*.9; 
-				imageOffX = clamp(imageOffX,-windowWidth*clampMultiplier, windowWidth*clampMultiplier);
-				imageOffY = clamp(imageOffY,-windowHeight*clampMultiplier, windowHeight*clampMultiplier);
+				imageOffX = clamp(imageOffX,-imageWidth*clampMultiplier, imageWidth*clampMultiplier);
+				imageOffY = clamp(imageOffY,-imageHeight*clampMultiplier, imageHeight*clampMultiplier);
 				Blit();
 			}
 			prevX = mouseX;
