@@ -95,7 +95,7 @@ void ImageUseRealSize() {
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
-	// Blit();
+	Blit();
 }
 
 float lerp(float a, float b, float t) {
@@ -111,7 +111,6 @@ void renderFrame() {
 
 	glUniform1f(scaleHandle, scaleA);
 	glUniform2f(offsetHandle, offXA/windowWidth*2,offYA/windowHeight*2);
-
 	
 	// TODO: figure out why this happens...
 	if (isnan(stretchYA)) {
@@ -182,7 +181,6 @@ void Blit() {
 	} break;
 	}
 
-	// glUniform2f(stretchHandle, stretchX, stretchY);
 	glViewport(0,0,windowWidth,windowHeight);
 
 	if (!realtime) {
@@ -613,7 +611,25 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	} break;
 	case WM_MOUSEWHEEL: {
 		int delta = (int)wParam>>16;
-		imageScale += (float)delta * .001 * imageScale;
+
+		if (aliasing && fitMode==FMrealSize) {
+			// let's scale in fixed increments to preserve the pixel perfect aesthetics
+			if (delta>0) {
+				if (imageScale<1) {
+					imageScale*=2;
+				} else {
+					imageScale+=1;
+				}
+			} else {
+				if (imageScale<=1) {
+					imageScale*=.5;
+				} else {
+					imageScale-=1;
+				}
+			}
+		} else {
+			imageScale += (float)delta * .001 * imageScale;
+		}
 
 		Blit();
 		return DefWindowProc(hwnd, message, wParam, lParam);
