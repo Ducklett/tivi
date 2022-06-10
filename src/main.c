@@ -32,6 +32,7 @@ int offsetHandle;
 typedef enum FitMode {
 	FMrealSize,
 	FMfit,
+	FMfill,
 	FMfitHorizontal,
 	FMfitVertical
 } FitMode;
@@ -63,6 +64,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 void ImageFit() { 
 	fitMode = FMfit;
+	imageScale=1;
+	imageOffX=0;
+	imageOffY=0;
+	Blit();
+}
+void ImageFill() { 
+	fitMode = FMfill;
 	imageScale=1;
 	imageOffX=0;
 	imageOffY=0;
@@ -137,13 +145,21 @@ void Blit() {
 	case FMfit: {
 		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
 		if (aspect<1) {
-			// height bound
 			stretchX=aspect;
 			stretchY=1;
 		} else {
-			// width bound
 			stretchX=1;
 			stretchY=1/aspect;
+		}
+	} break;
+	case FMfill: {
+		float aspect = ((float)imageWidth/imageHeight)/((float)windowWidth/windowHeight);
+		if (aspect<1) {
+			stretchX=1;
+			stretchY=1/aspect;
+		} else {
+			stretchX=aspect;
+			stretchY=1;
 		}
 	} break;
 	case FMrealSize: {

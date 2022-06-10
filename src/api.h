@@ -13,6 +13,7 @@ void PrevImage();
 void ResetZoom();
 
 void ImageFit();
+void ImageFill();
 void ImageFitHorizontal();
 void ImageFitVertical();
 void ImageUseRealSize();

@@ -48,7 +48,10 @@ const KeyBind keyBindings[] = {
 	{ .key = '1',        .action = ImageUseRealSize },
 	{ .key = '2',        .action = ImageFit },
 	{ .key = '3',        .action = ImageFitHorizontal },
+	{ .key = 'h',        .action = ImageFitHorizontal },
 	{ .key = '4',        .action = ImageFitVertical },
+	{ .key = 'v',        .action = ImageFitVertical },
+	{ .key = '5',        .action = ImageFill },
 };
 
 const int keyBindingsCount = sizeof(keyBindings) / sizeof(KeyBind);
