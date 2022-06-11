@@ -22,7 +22,7 @@ WINDOWPLACEMENT placement = {sizeof(placement)};
 HWND hwnd;
 HDC hdc;
 HGLRC ctx;
-int windowWidth,windowHeight;
+int windowWidth = 0,windowHeight = 0;
 int imageWidth,imageHeight;
 int stretchHandle;
 int scaleHandle;
@@ -134,6 +134,9 @@ void reset_zoom() {
 }
 
 void blit() {
+	// image hasn't been loaded yet
+	if (!windowWidth) return;
+
 	RECT rect;
 	GetClientRect(hwnd,&rect);
 	windowWidth = rect.right-rect.left;
@@ -242,8 +245,10 @@ void show_image(const char *path)
 		mag*=factor;
 	}
 
-	windowWidth = max(windowWidth, width*mag);
-	windowHeight = max(windowHeight, height*mag);
+	if (!windowWidth) {
+		windowWidth = width*mag;
+		windowHeight = height*mag;
+	}
 
 	// TODO: set client rect instead of window size (this leaves small black borders)
 	// TODO: don't do it in fullscreen
