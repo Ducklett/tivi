@@ -109,14 +109,17 @@ void render_frame() {
 		}
 	}
 
-	scaleA	  = lerp(scaleA, imageScale, SCALE_SPEED);
-	offXA	  = lerp(offXA, imageOffX, PAN_SPEED);
-	offYA	  = lerp(offYA, imageOffY, PAN_SPEED);
+	scaleA	  = lerp(scaleA, imageScale, aliasing ? 1 : SCALE_SPEED);
+	offXA	  = lerp(offXA, imageOffX, aliasing ? 1 : PAN_SPEED);
+	offYA	  = lerp(offYA, imageOffY, aliasing ? 1 : PAN_SPEED);
 	stretchXA = lerp(stretchXA, stretchX, STRETCH_SPEED);
 	stretchYA = lerp(stretchYA, stretchY, STRETCH_SPEED);
 
+	float offXScaled = offXA / windowWidth * 2;
+	float offYScaled = offYA / windowHeight * 2;
+
 	glUniform1f(scaleHandle, scaleA);
-	glUniform2f(offsetHandle, offXA / windowWidth * 2, offYA / windowHeight * 2);
+	glUniform2f(offsetHandle, offXScaled, offYScaled);
 
 	// TODO: figure out why this happens...
 	if (isnan(stretchYA)) {
