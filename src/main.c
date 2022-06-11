@@ -95,7 +95,20 @@ float lerp(float a, float b, float t) {
 	return (1 - t) * a + b * t;
 }
 
+const int cursorVisibilityFrames = 200;
+int framesSinceCursorMoved		 = 0;
+bool cursorVisible				 = true;
+
 void render_frame() {
+	framesSinceCursorMoved++;
+
+	if (framesSinceCursorMoved == cursorVisibilityFrames) {
+		if (cursorVisible) {
+			ShowCursor(false);
+			cursorVisible = false;
+		}
+	}
+
 	scaleA	  = lerp(scaleA, imageScale, SCALE_SPEED);
 	offXA	  = lerp(offXA, imageOffX, PAN_SPEED);
 	offYA	  = lerp(offYA, imageOffY, PAN_SPEED);
@@ -569,7 +582,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		SetCapture(hwnd);
 		return 0;
 	} break;
+	case WM_NCMOUSEMOVE: /* FALLTHROUGH */
+		// ignore other actions when dragging
+		if (shiftHeld) return DefWindowProc(hwnd, message, wParam, lParam);
 	case WM_MOUSEMOVE: {
+		if (!cursorVisible) {
+			framesSinceCursorMoved = 0;
+			ShowCursor(true);
+			cursorVisible = true;
+		}
+
 		static int prevX = 0;
 		static int prevY = 0;
 
