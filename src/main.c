@@ -91,8 +91,14 @@ void image_use_real_size() {
 	blit();
 }
 
-float lerp(float a, float b, float t) {
-	return (1 - t) * a + b * t;
+float spring(float a, float b, float t, bool *doneFlag) {
+	float v = (1 - t) * a + b * t;
+	if (fabsf(b - v) <= .01) {
+		v = b;
+	} else {
+		*doneFlag = false;
+	}
+	return v;
 }
 
 const int cursorVisibilityFrames = 200;
@@ -109,11 +115,12 @@ void render_frame() {
 		}
 	}
 
-	scaleA	  = lerp(scaleA, imageScale, aliasing ? 1 : SCALE_SPEED);
-	offXA	  = lerp(offXA, imageOffX, aliasing ? 1 : PAN_SPEED);
-	offYA	  = lerp(offYA, imageOffY, aliasing ? 1 : PAN_SPEED);
-	stretchXA = lerp(stretchXA, stretchX, STRETCH_SPEED);
-	stretchYA = lerp(stretchYA, stretchY, STRETCH_SPEED);
+	bool allDone = true;
+	scaleA		 = spring(scaleA, imageScale, aliasing ? 1 : SCALE_SPEED, &allDone);
+	offXA		 = spring(offXA, imageOffX, aliasing ? 1 : PAN_SPEED, &allDone);
+	offYA		 = spring(offYA, imageOffY, aliasing ? 1 : PAN_SPEED, &allDone);
+	stretchXA	 = spring(stretchXA, stretchX, STRETCH_SPEED, &allDone);
+	stretchYA	 = spring(stretchYA, stretchY, STRETCH_SPEED, &allDone);
 
 	float offXScaled = offXA / windowWidth * 2;
 	float offYScaled = offYA / windowHeight * 2;
@@ -134,6 +141,13 @@ void render_frame() {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	SwapBuffers(hdc);
+
+	if (allDone && realtime) {
+		realtime = false;
+	} else if (!allDone && !realtime) {
+		realtime = true;
+		RedrawWindow(hwnd, NULL, NULL, RDW_INTERNALPAINT);
+	}
 }
 
 void reset_zoom() {
@@ -405,7 +419,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 	SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
 #endif
 
-	realtime = true;
+	realtime = false;
 
 	MSG msg = {0};
 	while (GetMessage(&msg, hwnd, 0, 0) > 0) {
@@ -674,6 +688,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		// TODO: figure out how to do proper game loop
 		if (realtime) {
 			render_frame();
+			RedrawWindow(hwnd, NULL, NULL, RDW_INTERNALPAINT);
+			return 0;
 		} else {
 			return DefWindowProc(hwnd, message, wParam, lParam);
 		}
