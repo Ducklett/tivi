@@ -36,28 +36,28 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-int last_index_of(const char* path, char c) {
+int last_index_of(const char *path, char c) {
 	int last = -1;
-	for(int i = 0; path[i] != '\0'; i++) {
+	for (int i = 0; path[i] != '\0'; i++) {
 		if (path[i] == c) last = i;
 	}
 	return last;
 }
 
-bool extension_is_supported(const char* path) {
+bool extension_is_supported(const char *path) {
 	int lastDotIndex = last_index_of(path, '.');
 
 	// it doesn't have an extension
 	if (lastDotIndex == -1) return false;
 
-	const char* pathExt = path+lastDotIndex;
+	const char *pathExt = path + lastDotIndex;
 
-	const char* legalExtensions[] = {
+	const char *legalExtensions[] = {
 #ifdef SUPPORT_PNG
 		".png",
 #endif
 #ifdef SUPPORT_JPEG
-		".jpg", ".jpeg", ".jpe", ".jif", ".jfif",".jfi",
+		".jpg", ".jpeg", ".jpe", ".jif", ".jfif", ".jfi",
 #endif
 #ifdef SUPPORT_BMP
 		".bmp", ".dib",
@@ -66,7 +66,7 @@ bool extension_is_supported(const char* path) {
 		".psd",
 #endif
 #ifdef SUPPORT_TGA
-		".tga", ".icb", ".vda", ".vst",
+		".tga", ".icb",	 ".vda", ".vst",
 #endif
 #ifdef SUPPORT_GIF
 		".gif",
@@ -78,35 +78,35 @@ bool extension_is_supported(const char* path) {
 		".PIC",
 #endif
 #ifdef SUPPORT_PNM
-		".pbm", ".pgm", ".ppm", ".pnm",
+		".pbm", ".pgm",	 ".ppm", ".pnm",
 #endif
 #ifdef SUPPORT_QOI
 		".qoi",
 #endif
 	};
 
-	for(int i = 0; i<sizeof(legalExtensions)/sizeof(char*); i++) {
-		const char* legalExt = legalExtensions[i];
+	for (int i = 0; i < sizeof(legalExtensions) / sizeof(char *); i++) {
+		const char *legalExt = legalExtensions[i];
 
-		if (!strcmp(pathExt,legalExt)) return true;
+		if (!strcmp(pathExt, legalExt)) return true;
 	}
 	return false;
 }
 
-char* decode_image(const char* path, int* width, int* height, int* channels, int desiredChannels) {
+char *decode_image(const char *path, int *width, int *height, int *channels, int desiredChannels) {
 #ifdef SUPPORT_QOI
 	int dotIndex = last_index_of(path, '.');
-	if (dotIndex > -1 && !strcmp(path+dotIndex, ".qoi")) {
+	if (dotIndex > -1 && !strcmp(path + dotIndex, ".qoi")) {
 		printf("is qoi!\n");
 
 		qoi_desc desc;
 		char *imgData = qoi_read(path, &desc, desiredChannels);
 
-		*width=desc.width;
-		*height=desc.height;
-		*channels=desc.channels;
+		*width	  = desc.width;
+		*height	  = desc.height;
+		*channels = desc.channels;
 
-		*width=desc.width;
+		*width = desc.width;
 
 		return imgData;
 	} else {
@@ -118,6 +118,6 @@ char* decode_image(const char* path, int* width, int* height, int* channels, int
 #endif
 }
 
-void decoded_image_free(char* imgData) {
+void decoded_image_free(char *imgData) {
 	stbi_image_free(imgData);
 }

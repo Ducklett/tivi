@@ -2,7 +2,7 @@
 
 void render_frame();
 void blit();
-void fail(const char* msg);
+void fail(const char *msg);
 void exit_app();
 void show_image(const char *path);
 void toggle_fullscreen();
@@ -20,5 +20,5 @@ void image_use_real_size();
 
 typedef struct KeyBind {
 	char key;
-	void(*action)();
+	void (*action)();
 } KeyBind;
